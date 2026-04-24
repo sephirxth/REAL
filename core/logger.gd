@@ -257,6 +257,12 @@ func capture(trigger_summary: String, context: Dictionary = {}) -> String:
 
 	var initial_content := _build_log_content(trigger_summary, capture_context)
 	_write_capture_file(filepath, initial_content)
+	var snapshot_path := _write_snapshot(capture_stem, trigger_summary, capture_context, "", [])
+	var artifact_path := _write_artifact_metadata(capture_stem, trigger_summary, capture_context, "", [])
+	_append_capture_snapshot_event(trigger_summary, capture_context, snapshot_path, artifact_path, "")
+	if snapshot_path != "":
+		_latest_snapshot_path = snapshot_path
+		_write_session_manifest()
 
 	# C3: Screenshot
 	var screenshot_path := ""
@@ -268,12 +274,27 @@ func capture(trigger_summary: String, context: Dictionary = {}) -> String:
 
 	var content := _build_log_content(trigger_summary, capture_context, screenshot_path, annotations)
 	_write_capture_file(filepath, content)
-	var snapshot_path := _write_snapshot(capture_stem, trigger_summary, capture_context, screenshot_path, annotations)
-	var artifact_path := _write_artifact_metadata(capture_stem, trigger_summary, capture_context, screenshot_path, annotations)
+	if screenshot_path != "" or not annotations.is_empty():
+		snapshot_path = _write_snapshot(capture_stem, trigger_summary, capture_context, screenshot_path, annotations)
+		artifact_path = _write_artifact_metadata(capture_stem, trigger_summary, capture_context, screenshot_path, annotations)
+		if snapshot_path != "":
+			_latest_snapshot_path = snapshot_path
+			_write_session_manifest()
+	print("[Logger] Captured: %s" % filename)
+	return filepath
+
+
+func _append_capture_snapshot_event(trigger_summary: String, capture_context: Dictionary, snapshot_path: String, artifact_path: String, screenshot_path: String) -> void:
 	_append_timeline_event({
 		"tick": _current_tick,
 		"time": _elapsed_time(),
 		"type": "Capture.snapshot",
+		"reason": trigger_summary,
+		"trigger_summary": {
+			"reason": trigger_summary,
+			"normalized": trigger_summary.to_upper().replace(" ", "_"),
+			"source": str(capture_context.get("source", "")),
+		},
 		"data": {
 			"reason": trigger_summary,
 			"command_id": str(capture_context.get("command_id", "")),
@@ -285,12 +306,6 @@ func capture(trigger_summary: String, context: Dictionary = {}) -> String:
 		},
 		"caller": {},
 	})
-	print("[Logger] Captured: %s" % filename)
-	if snapshot_path != "":
-		_latest_snapshot_path = snapshot_path
-		_write_session_manifest()
-
-	return filepath
 
 
 # ============================================
@@ -537,6 +552,10 @@ func _append_timeline_event(event: Dictionary) -> void:
 		"data": _to_json_compatible(event.get("data", {})),
 		"caller": _to_json_compatible(event.get("caller", {})),
 	}
+	if event.has("reason"):
+		line["reason"] = str(event.get("reason", ""))
+	if event.has("trigger_summary"):
+		line["trigger_summary"] = _to_json_compatible(event.get("trigger_summary", {}))
 	_append_jsonl(_timeline_path, line)
 
 
