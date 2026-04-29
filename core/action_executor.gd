@@ -231,6 +231,8 @@ func execute(command: Dictionary) -> Dictionary:
 			result = _cmd_input_drag(normalized_command)
 		"input_action":
 			result = _cmd_input_action(normalized_command)
+		"call":
+			result = _cmd_call(normalized_command)
 		_:
 			result.message = "Unknown command type: %s" % cmd_type
 
@@ -500,6 +502,60 @@ func _cmd_emit(cmd: Dictionary) -> Dictionary:
 	if _logger: _logger.log_event("C4.emit", {"event": event_name, "data": data})
 	if _logger: _logger.log_event(event_name, data)
 	return {"success": true, "message": "Emitted event: %s" % event_name}
+
+
+## Invoke a method on a registered entity. Game must opt the method in via
+## `_real_test_methods() -> Array` returning the list of test-exposed names.
+## This is the orthogonal "causation" primitive — it removes the need for ad-hoc
+## input-injection workarounds when evaluator must trigger gameplay logic
+## directly (e.g. fill inventory to test capacity pressure).
+func _cmd_call(cmd: Dictionary) -> Dictionary:
+	var entity_id: String = cmd.get("entity", "")
+	var method: String = cmd.get("method", "")
+	var args_raw: Variant = cmd.get("args", [])
+	var args: Array = (args_raw as Array) if args_raw is Array else []
+
+	if entity_id.is_empty() or method.is_empty():
+		return {"success": false, "message": "call requires entity and method"}
+	if not _entity_refs.has(entity_id):
+		return {"success": false, "message": "Entity not found: %s" % entity_id}
+
+	var node: Node = _entity_refs[entity_id]
+	if not is_instance_valid(node):
+		return {"success": false, "message": "Entity stale: %s" % entity_id}
+	if not node.has_method(method):
+		return {"success": false, "message": "%s has no method %s" % [entity_id, method]}
+	if not _is_method_test_exposed(node, method):
+		return {
+			"success": false,
+			"message": "Method not test-exposed: %s.%s — game must list it in _real_test_methods()" % [entity_id, method],
+		}
+
+	var ret: Variant = node.callv(method, args)
+	var ret_text: String = _variant_to_response_text(ret)
+	if _logger:
+		_logger.log_event("C4.call", {
+			"entity": entity_id,
+			"method": method,
+			"args": args,
+			"return": ret_text,
+		})
+	return {
+		"success": true,
+		"message": "%s.%s(...) -> %s" % [entity_id, method, ret_text],
+		"return": ret,
+	}
+
+
+func _is_method_test_exposed(node: Node, method: String) -> bool:
+	if not node.has_method("_real_test_methods"):
+		return false
+	var allowed: Variant = node.call("_real_test_methods")
+	if allowed is Array:
+		return method in (allowed as Array)
+	if allowed is PackedStringArray:
+		return method in (allowed as PackedStringArray)
+	return false
 
 
 func _cmd_pause(_cmd: Dictionary) -> Dictionary:
