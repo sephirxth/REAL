@@ -190,8 +190,8 @@ func _create_gizmo_2d() -> Node2D:
 	var gizmo := Node2D.new()
 	gizmo.name = "EditGizmo"
 	gizmo.z_index = 1000
-	var _base := get_script().resource_path.get_base_dir()
-	var gizmo_path := _base + "/gizmo_2d.gd"
+	var _base: String = get_script().resource_path.get_base_dir()
+	var gizmo_path: String = _base + "/gizmo_2d.gd"
 	gizmo.set_script(load(gizmo_path) if ResourceLoader.exists(gizmo_path) else null)
 
 	# 如果没有专门的脚本，用简单的绘制

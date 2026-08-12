@@ -1,1 +1,5 @@
 Godot_v4.6-stable_linux.x86_64/
+.godot/
+__pycache__/
+*.py[cod]
+logs/
