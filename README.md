@@ -174,4 +174,4 @@ skills/real-implementation/   Agent instructions shipped with the framework
 
 R.E.A.L. is the in-game observability and action layer. It is not an agent orchestrator, planner, evaluator, or game engine. Pair it with a harness or evaluator that owns process lifecycle, evidence policy, and verdicts.
 
-The observability contract is documented in [`docs/observability-contract-v0.1.md`](docs/observability-contract-v0.1.md). The six-plane model and storage tiers are documented in [`docs/observability-model.md`](docs/observability-model.md). Historical derivations are retained under `docs/archive/`.
+The observability contract is documented in [`docs/observability-contract-v0.1.md`](docs/observability-contract-v0.1.md). The eight-capability runtime model and storage tiers are documented in [`docs/observability-model.md`](docs/observability-model.md). Historical derivations are retained under `docs/archive/`.

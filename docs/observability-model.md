@@ -1,23 +1,27 @@
 # R.E.A.L. observability and control model
 
-Logs, screenshots, and a debug console are not three interchangeable layers. Logs and screenshots are evidence modalities; a console is a control surface. R.E.A.L. separates six runtime planes so each artifact has an explicit role.
+Logs, screenshots, and a debug console are not three interchangeable layers. Logs and screenshots are evidence modalities; a console is a control surface. R.E.A.L. defines eight runtime capabilities so each interface and artifact has an explicit role. The first five provide observation; the final three close the experiment loop.
 
-| Plane | Question answered | Typical products |
-|---|---|---|
-| Timeline | What happened, and in what order? | structured events, warnings, errors, performance samples |
-| Semantic state | What did the game mean at this point? | schema-backed snapshots, entity registry, numeric deltas, anomalies |
-| Visual evidence | What did the player actually see? | clean screenshots, annotated screenshots, video, target-to-pixel geometry |
-| Control | Can an agent perform a named experiment safely? | semantic console, allowlisted runtime actions, scenario setup, editor selection |
-| Reproduction | Can the same situation be reconstructed? | build/content revision, seed, action trace, checkpoints, replay |
-| Verdict | Did the behavior satisfy the contract? | assertions, health gates, pass/fail/inconclusive, evidence references |
+| Capability | Type | Question answered | Typical products |
+|---|---|---|---|
+| Identity | observation | Which exact runtime produced this evidence? | build/content revision, run/session, tick, seed, scene, config profile |
+| Timeline | observation | What happened, and in what order? | structured events/logs, warnings, errors, performance samples |
+| Semantic state | observation | What did the game mean at this point? | schema-backed snapshots, entity/target registry, deltas, anomalies |
+| Numeric explainability | observation | Why did this number become that number? | units, value provenance, formula/intermediate traces, invariant violations |
+| Visual evidence | observation | What did the player actually see? | clean screenshots, annotated screenshots, video, target-to-pixel geometry |
+| Semantic commands | control | Can an agent perform a named experiment safely? | semantic console, allowlisted actions, temporary overrides, editor selection |
+| Reproduction | replay | Can the same situation be reconstructed? | action trace, checkpoints, build identity, seed, deterministic replay |
+| Verdict | judgment | Did the behavior satisfy the contract? | assertions, health gates, pass/fail/inconclusive, evidence references |
 
 The causal loop is:
 
 ```text
-control/action -> timeline -> semantic snapshot + visual artifact -> verdict
-       ^                                                        |
-       +---------------- reproduction/replay -------------------+
+semantic command -> timeline -> state + numeric trace + visual artifact -> verdict
+        ^                                                               |
+        +-------------------- reproduction/replay -----------------------+
 ```
+
+Identity fields correlate every step. Numeric explainability belongs beside semantic state rather than being hidden in prose logs: the game and its headless simulator must use the same authoritative formulas.
 
 ## Storage and learning tiers
 
@@ -39,9 +43,10 @@ A new game should expose all of the following before it is considered agent-debu
 1. stable build, session, tick, and seed identity;
 2. structured transition events rather than prose-only logging;
 3. semantic snapshots through a thin game adapter;
-4. screenshots correlated to snapshots and commands;
-5. allowlisted semantic actions with explicit command IDs;
-6. a replay recipe or checkpoint sufficient to reproduce a defect;
-7. machine-readable assertions and an explicit verdict.
+4. an explainable numeric core with units, provenance, formula traces, and executable invariants;
+5. screenshots correlated to snapshots and commands;
+6. allowlisted semantic actions with explicit command IDs;
+7. a replay recipe or checkpoint sufficient to reproduce a defect;
+8. machine-readable assertions and an explicit verdict.
 
 The Web runtime implements this as browser/Node ES modules. The Godot runtime implements the same contract through autoloads, JSONL, screenshots, and the loopback action executor.
