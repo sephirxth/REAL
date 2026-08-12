@@ -1,8 +1,8 @@
 # R.E.A.L.
 
-R.E.A.L. is a Godot 4 runtime observability and control layer for agent-assisted game development. It makes a game inspectable, reproducible, and safely controllable by an LLM or an external evaluator.
+R.E.A.L. is a multi-runtime observability and control layer for agent-assisted game development. It makes a game inspectable, reproducible, and safely controllable by an LLM or an external evaluator. The repository currently ships a Godot 4 runtime and a dependency-free Web runtime for Phaser and other browser games.
 
-The current release consolidates the original R.E.A.L. implementation, the evidence-oriented Godot automation pipeline, and fixes proven in City Conquest Master. The original C1/C3/C4 files remain under `legacy/`; new projects should use the evidence-oriented runtime in `core/`.
+The current release consolidates the original R.E.A.L. implementation, the evidence-oriented Godot automation pipeline, Web observability proven in Tank Epochs, the archived Phaser semantic-console experiment, and fixes proven in City Conquest Master. The original C1/C3/C4 files remain under `legacy/`; new Godot projects should use `core/`, while browser games should use `runtimes/web/`.
 
 ## What it provides
 
@@ -13,6 +13,7 @@ The current release consolidates the original R.E.A.L. implementation, the evide
 - entity read/write, teleport, spawn, destroy, pause, time scale, input injection, capture, and allowlisted method calls;
 - explicit opt-in for commands that write into the project;
 - runtime edit mode and layout export;
+- a Web/Phaser observer, browser-to-Node evidence bridge, and semantic command console;
 - a dependency-free CLI for finding, inspecting, asserting against, and acting on captures.
 
 ## Requirements
@@ -20,6 +21,29 @@ The current release consolidates the original R.E.A.L. implementation, the evide
 - Godot 4.4 or newer; Godot 4.6 is used by the smoke test.
 - Python 3.10 or newer for the installer and CLI.
 - Linux/macOS for UDP examples. The Web bridge works in exported browser builds.
+- Node.js 20 or newer to run the Web runtime tests and filesystem sink.
+
+## Install into a Phaser or browser game
+
+The Web runtime is made of dependency-free ES modules. Copy `runtimes/web/src/` into the game, provide a thin adapter for semantic state and commands, and keep it behind a development flag:
+
+```js
+import { createBrowserSink, createObserver, installSemanticConsole } from './vendor/real-web/index.js';
+
+const adapter = {
+  observe: () => ({ phase: model.phase, resources: { gold: model.gold } }),
+  tick: () => game.loop.frame,
+  getState() { return this.observe(); },
+  listTargets: () => targetRegistry,
+  selectTarget: (id) => editor.selectBySemanticId(id),
+  commands: { 'set-gold': (_context, [value]) => { model.gold = Number(value); } },
+};
+
+const observer = createObserver({ adapter, sink: createBrowserSink() });
+installSemanticConsole({ game, adapter });
+```
+
+See [`runtimes/web/README.md`](runtimes/web/README.md) for the full integration and browser-to-Node persistence flow.
 
 ## Install into a new or existing Godot project
 
@@ -128,6 +152,7 @@ Use `python3 tools/real_cli.py --help` for the complete command tree.
 ```bash
 python3 -m unittest discover -s tests -p 'test_*.py'
 GODOT_BIN=/absolute/path/to/godot ./tests/test_godot_smoke.sh
+npm --prefix runtimes/web test
 ```
 
 The smoke test installs R.E.A.L. into a fresh temporary project and asks Godot to load it. It does not use a checked-in engine binary.
@@ -136,6 +161,7 @@ The smoke test installs R.E.A.L. into a fresh temporary project and asks Godot t
 
 ```text
 core/                         current Godot runtime
+runtimes/web/                 Phaser/browser observer, sinks, and semantic console
 scripts/install.py            idempotent project installer
 tools/real_cli.py             capture/oracle/action CLI
 tests/                        installer and Godot smoke tests
@@ -148,4 +174,4 @@ skills/real-implementation/   Agent instructions shipped with the framework
 
 R.E.A.L. is the in-game observability and action layer. It is not an agent orchestrator, planner, evaluator, or game engine. Pair it with a harness or evaluator that owns process lifecycle, evidence policy, and verdicts.
 
-The observability contract is documented in [`docs/observability-contract-v0.1.md`](docs/observability-contract-v0.1.md). Historical derivations are retained under `docs/archive/`.
+The observability contract is documented in [`docs/observability-contract-v0.1.md`](docs/observability-contract-v0.1.md). The six-plane model and storage tiers are documented in [`docs/observability-model.md`](docs/observability-model.md). Historical derivations are retained under `docs/archive/`.

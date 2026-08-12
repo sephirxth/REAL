@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.3.0 — 2026-08-12
+
+- Added a dependency-free Web runtime for Phaser and other browser games.
+- Consolidated the portable observer proven in Tank Epochs: manifests, timeline, semantic snapshots, numeric deltas, artifacts, and verdicts.
+- Added a one-line browser console bridge and Node filesystem sink for durable evidence bundles.
+- Consolidated the archived Phaser debug REPL into a generic semantic console with stable target IDs and game-owned commands.
+- Formalized six runtime planes: timeline, semantic state, visual evidence, control, reproduction, and verdict.
+
 ## v0.2.0 — 2026-08-12
 
 - Consolidated the original R.E.A.L. repository with the evidence-oriented Godot pipeline runtime.
